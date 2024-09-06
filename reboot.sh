@@ -5,7 +5,7 @@ cd ~
 source scroller/bin/activate
 # cd to project directory and run python script
 cd ~/Projects/landscape-scroller-raspberrypi
-python python_client.py &
+python python_server.py &
 
 # Run Processing sketch
 cd ~
