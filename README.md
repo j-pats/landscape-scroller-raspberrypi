@@ -1,46 +1,50 @@
 # Landscape Scroller Picture Frame
 
-![[scroller_cropped 1.png]]
+![Project Pictureframe](./images/demo.gif)
+
 This project originally came about from a reddit post I came across years ago on r/DidntKnowIWantedThat for a landscape scroller picture frame thing. The original poster u/
 ubermonjies provided a few details on the build materials and offered to provide the code but never ended up providing code or instructions.
 
-![[Pasted image 20240906203655.png]]
+![Pictureframe from reddit](./images/reddit_scroller.png)
+
 *Above: From the original reddit post*
 
 I absolutely loved the end result, and have wanted one for myself for years, and so I finally decided to take it upon myself to remake it as best I can. I have included a full writeup for what parts are required, and have included a GitHub repo with the code that I used to remake it. 
 ## Materials
 
 List of Materials:
-x1 Raspberry Pi 3 B+ (Can probably use others, just the one I used)
-x1 MicroSD Card for OS (Raspberry Pi OS 64 bit)
-x2 10k Potentiometers
-x2 Potentiometer knobs
-x1 Raspberry PI 7" touchscreen (Back mounting preferred)
-x1 Picture Frame
-x1 Raspberry Pi 5v Power supply
-x1 ADC (I used ADS1115)
-x1 sheet of white cardstock
-x4 mounting brackets
+
+- x1 Raspberry Pi 3 B+ (Can probably use others, just the one I used)
+- x1 MicroSD Card for OS (Raspberry Pi OS 64 bit)
+- x2 10k Potentiometers
+- x2 Potentiometer knobs
+- x1 Raspberry PI 7" touchscreen (Back mounting preferred)
+- x1 Picture Frame
+- x1 Raspberry Pi 5v Power supply
+- x1 ADC (I used ADS1115)
+- x1 sheet of white cardstock
+- x4 mounting brackets
 
 Other materials and tools used:
-Super glue
-Mounting brackets
-Raspberry Pi standoffs
-Mounting bolts
-Mounting screws
-Breadboard wires
-Soldering gun
-Multimeter
+- Super glue
+- Mounting brackets
+- Raspberry Pi standoffs
+- Mounting bolts
+- Mounting screws
+- Breadboard wires
+- Soldering gun
+- Multimeter
 
 ## Raspberry Pi Setup and Wiring
-![[raspbpi3_cropped.jpg]]
+raspbpi3_cropped.jpg
+![Raspberry pi](./images/raspbpi3_cropped.jpg)
 #### Installing Raspberry Pi OS
 - Download the Raspberry Pi operating system from https://www.raspberrypi.com/software/
 - Can use the Raspberry Pi Imager software to write the OS image to your SD card
 - The Imager allows you to preconfigure some settings and setup the Wi-Fi network to connect to once booted.
 
 #### Connecting the Screen
-![[PXL_20240824_211644650.jpg]]
+![Raspberry pi screen - back](./images/screen_reverse.jpg)
 The 7" touchscreen that I ordered came with very simple instructions for connecting the screen to my Raspberry Pi:
 - Insert the SD card into the Raspberry Pi with Raspberry Pi OS.
 - Install the included brass standoffs into the mounting holes on the back of the touchscreen.
@@ -49,8 +53,7 @@ The 7" touchscreen that I ordered came with very simple instructions for connect
 - Connect the other end of the ribbon cable to the Raspberry Pi's display connector just on the other side of the SD card reader.
 - (Optional) Attach the screen stand to allow the screen + Pi to stand up
 
-![[PXL_20240824_212311855.MP.jpg]]
-![[PXL_20240824_212919005 1.jpg]]
+![Raspberry pi booted](./images/rbpi-boot.jpg)
 *The screen should just display with no configuration needed, if the screen does not display when the Raspberry Pi is booted, try checking if the ribbon cable is properly attached*
 #### Mount the Potentiometers
 To mount the potentiometers, I used a large drill bit to hollow out a channel in the backside of the picture frame and used a sharp knife to smooth it out for the potentiometers to sit in. I then drilled channels for the potentiometer knob shafts so they would sit above the picture frame.
@@ -62,12 +65,12 @@ The screen that I chose for the project does not have the display area centered 
 After centering the screen, I mounted the display and Pi with some picture frame mounting brackets.
 #### Wiring the ADC and Potentiometers
 
-![[scroller-fritzing_bb.png]]
+![Fritzing diagram](./images/scroller-fritzing.png)
 The Raspberry Pi cannot read the analog signals from the signal pin on our two potentiometers, and so the ADC board must be connected to receive the two potentiometer signals.
 
 #### ADS1115 and OSC Setup
 
-![[ads1115_cropped.jpg]]
+![ADS1115](./images/ads1115_cropped.jpg)
 
 In order to read the digital signals from the ADS1115, we will make use of a python script that runs in the background and passes the values to the Processing sketch periodically. The python script will use the adafruit ads1x15 library to read the serial data coming from the ADS1115, and pass the values to the Processing sketch using the OSC protocol.
 
@@ -75,14 +78,14 @@ In order to read the digital signals from the ADS1115, we will make use of a pyt
 
 - After installation of Blinka into your Python virtual environment, install the ADS1115 CircuitPython library with:
 
-`pip3 install adafruit-circuitpython-ads1x15
+`pip3 install adafruit-circuitpython-ads1x15`
 
 - Then install the Python-osc library for passing the potentiometer values to the Processing sketch:
 
-`pip install python-osc
+`pip install python-osc`
 
 ## Python Script
-````
+```
 import board
 
 import busio
@@ -192,7 +195,7 @@ while True:
     # Delay sampling time (~30 times second)
 
     time.sleep(0.032)
-`````````
+```
 
 - The above script uses a port of 13575 to send the OSC messages to the Processing script, feel free to change this if that specific port does not work for you.
 - The loop iterates approximately 30 times per second, which should be more than enough for our application.
@@ -200,10 +203,9 @@ while True:
 
 #### Testing the python script
 Assuming that your Raspberry Pi is fully wired and booted, to test the python script make sure that you have the correct virtual environment enabled:
-`
-`cd ~
+`cd ~`
 
-`source scroller/bin/activate
+`source scroller/bin/activate`
 
 `cd` into the Project folder and run the script
 
@@ -211,7 +213,7 @@ Assuming that your Raspberry Pi is fully wired and booted, to test the python sc
 
 If the script is working correctly, as you adjust the potentiometer knobs, you should be seeing A0 and A1 values being output to the console as the knobs are rotated:
 
-![[2024-09-06-041455_800x480_scrot 1.png]]
+![ADS1115](./images/python-console-output.png)
 
 *Note: If you followed the above wiring diagram you should be seeing values between 0 - ~21600 output to console. This is because I have the potentiometers wired to 3.3v. Potentiometers wired to 5v should see values between 0 - ~32700*
 
@@ -227,9 +229,7 @@ Install oscP5 library through the GUI:
 
 I have included the full Processing sketch code below, which makes use of many magic numbers, and other values that seem to come out of nowhere. This is the result of lots and lots of tinkering to achieve the look that I was going for to come close to the original reddit video. The code is commented as best I can to allow you to more easily modify and customize it!
 
-The Processing sketch code as well as the python script, bash file, and additional instructions can be found in the repo:
-
-INSERT LINK TO GITHUB REPO
+The Processing sketch code as well as the python script, bash file, and additional instructions can all be found in this repo.
 
 ## Running it all Together
 To run the scroller, several steps are required:
@@ -244,7 +244,7 @@ To run the scroller, several steps are required:
 
 - Start the processing sketch. The processing sketch can be run from the command line using the following command:
 
-`PROCESSING-PATH/processing-java --sketch=/SKETCH-PATH/main --run
+`PROCESSING-PATH/processing-java --sketch=/SKETCH-PATH/main --run`
 
 *Note:*
 *PROCESSING-PATH is the path to where the processing-java executable  is located on your machine. If you downloaded the Processing .tgz file from Processing.org, it may be in your Downloads folder.*
@@ -293,3 +293,4 @@ xset dpms 3600 3600 3600
 - The third line runs the bash script on reboot
 
 Done - now on reboot the bash script will run, starting the python script as well as the Processing sketch after a few moments.
+
