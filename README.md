@@ -9,7 +9,7 @@ ubermonjies provided a few details on the build materials and offered to provide
 
 *Above: From the original reddit post*
 
-I absolutely loved the end result, and have wanted one for myself for years, and so I finally decided to take it upon myself to remake it as best I can. I have included a full writeup for what parts are required, and have included a GitHub repo with the code that I used to remake it. 
+I absolutely loved the end result, and have wanted one for myself for years, and so I finally decided to take it upon myself to remake it as best I can. I have included in this readme the entire projects creation process, with project files and scripts all included in the repository.
 ## Materials
 
 List of Materials:
@@ -36,7 +36,6 @@ Other materials and tools used:
 - Multimeter
 
 ## Raspberry Pi Setup and Wiring
-raspbpi3_cropped.jpg
 ![Raspberry pi](./images/raspbpi3_cropped.jpg)
 #### Installing Raspberry Pi OS
 - Download the Raspberry Pi operating system from https://www.raspberrypi.com/software/
@@ -44,7 +43,7 @@ raspbpi3_cropped.jpg
 - The Imager allows you to preconfigure some settings and setup the Wi-Fi network to connect to once booted.
 
 #### Connecting the Screen
-![Raspberry pi screen - back](./images/screen_reverse.jpg)
+![Raspberry pi screen - back](./images/screen-reverse.jpg)
 The 7" touchscreen that I ordered came with very simple instructions for connecting the screen to my Raspberry Pi:
 - Insert the SD card into the Raspberry Pi with Raspberry Pi OS.
 - Install the included brass standoffs into the mounting holes on the back of the touchscreen.
@@ -85,117 +84,7 @@ In order to read the digital signals from the ADS1115, we will make use of a pyt
 `pip install python-osc`
 
 ## Python Script
-```
-import board
-
-import busio
-
-import adafruit_ads1x15.ads1115 as ADS
-
-from adafruit_ads1x15.analog_in import AnalogIn
-
-import time
-
-from pythonosc import udp_client
-
-import argparse
-
-  
-
-# Initialize the I2C interface
-
-i2c = busio.I2C(board.SCL, board.SDA)
-
-  
-
-# Create an ADS1115 object
-
-ads = ADS.ADS1115(i2c)
-
-  
-
-# Define the analog input channels
-
-channel0 = AnalogIn(ads, ADS.P0)
-
-channel1 = AnalogIn(ads, ADS.P1)
-
-  
-
-# Parser arguments
-
-parser = argparse.ArgumentParser()
-
-parser.add_argument("--ip", default="127.0.0.1", help="IP of OSC server")
-
-parser.add_argument("--port", type=int, default=13575, help="Port OSC Server is listening on")
-
-args = parser.parse_args()
-
-  
-
-# Setup OSC client
-
-client = udp_client.SimpleUDPClient(args.ip, args.port)
-
-  
-
-# Save original analog integer values
-
-oldValue0 = channel0.value
-
-oldValue1 = channel1.value
-
-  
-
-# Send inital values
-
-# Converted digital value: channelX.value
-
-# Analog voltage: channelX.voltage
-
-client.send_message("/analog0", channel0.value)
-
-client.send_message("/analog1", channel1.value)
-
-  
-
-while True:
-
-    #Read converted values from ADS1115
-
-    value0 = channel0.value
-
-    analogValue1 = channel1.value
-
-  
-
-    #If value changed send as OSC message
-
-    if abs(oldValue0 - value0) > 3:
-
-        #Send new value A0
-
-        client.send_message("/analog0", value0)
-
-        oldValue0 = value0
-
-        print("Analog Value 0: ", value0)
-
-  
-
-    if abs(oldValue1 - analogValue1) > 3:
-
-        #Send new value A1
-
-        client.send_messageanalog1", analogValue1)
-
-        oldValue1 = analogValue1        print("Analog Value 1: ", )
-
-    # Delay sampling time (~30 times second)
-
-    time.sleep(0.032)
-```
+![python_server.py](./python_server.py)
 
 - The above script uses a port of 13575 to send the OSC messages to the Processing script, feel free to change this if that specific port does not work for you.
 - The loop iterates approximately 30 times per second, which should be more than enough for our application.
@@ -227,9 +116,7 @@ Install oscP5 library through the GUI:
 - Tools -> Manage Tools -> Libraries
 - Search for "oscP5", select it from the list, and click Install 
 
-I have included the full Processing sketch code below, which makes use of many magic numbers, and other values that seem to come out of nowhere. This is the result of lots and lots of tinkering to achieve the look that I was going for to come close to the original reddit video. The code is commented as best I can to allow you to more easily modify and customize it!
-
-The Processing sketch code as well as the python script, bash file, and additional instructions can all be found in this repo.
+This repository includes the full Processing sketch which makes use of many magic numbers. This is the result of lots and lots of tinkering to achieve the look that I was going for to come close to the original. The code is commented as best I can to allow you to more easily modify and tweak it.
 
 ## Running it all Together
 To run the scroller, several steps are required:
@@ -277,6 +164,7 @@ cd ~
 
 ./Downloads/processing-4.3/processing-java --sketch=/home/jesse/Projects/pi-scroller/main --run &
 ```
+![reboot.sh](./reboot.sh)
 
 ## Autostart
 To make the Pi automatically start the python script and processing sketch at startup, we can just run the above bash script at startup by modifying the autostart file to add a couple extra lines:
@@ -288,6 +176,8 @@ xset s 3600
 xset dpms 3600 3600 3600
 @reboot ./Projects/pi-scroller/reboot.sh
 ```
+
+![autostart](./autostart)
 
 - The first two lines increase the Raspberry Pi screen timeouts to be 1 hour (3600 seconds)
 - The third line runs the bash script on reboot
