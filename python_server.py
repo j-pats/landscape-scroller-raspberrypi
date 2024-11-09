@@ -5,6 +5,9 @@ from adafruit_ads1x15.analog_in import AnalogIn
 import time
 from pythonosc import udp_client
 import argparse
+import os
+import numpy as np
+from collections import deque
 
 # Initialize the I2C interface
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -26,32 +29,56 @@ args = parser.parse_args()
 client = udp_client.SimpleUDPClient(args.ip, args.port)
 
 # Save original analog integer values
-oldValue0 = channel0.value
-oldValue1 = channel1.value
+lastSentValue0 = channel0.value
+lastSentValue1 = channel1.value
+
+# Setup channel deques - initialized to store all 
+deque0 = deque(lastSentValue0) * 10
+deque1 = deque(lastSentValue1) * 10
+
+print(deque0)
+print(deque1)
 
 # Send inital values
 # Converted digital value: channelX.value
 # Analog voltage: channelX.voltage
-client.send_message("/analog0", channel0.value)
-client.send_message("/analog1", channel1.value)
+client.send_message("/analog0", lastSentValue0)
+client.send_message("/analog1", lastSentValue1)
 
 while True:
     #Read converted values from ADS1115
-    value0 = channel0.value
-    value1 = channel1.value
+    newValue0 = channel0.value
+    newValue1 = channel1.value
 
-    #If value changed send as OSC message
-    if abs(oldValue0 - value0) > 3:
-        # Send new value A0
-        client.send_message("/analog0", value0)
-        oldValue0 = value0
-        print("Analog Value 0: ", value0)
+    # If value not extreme, add to deque
+    if newValue0 * lastSentValue0 > 0 and abs(newValue0 - lastSentValue0) < 250:
+        deque0.appendleft(newValue0)
+        deque0.pop()
 
-    if abs(oldValue1 - value1) > 3:
-        # Send new value A1
-        client.send_message("/analog1", value1)
-        oldValue1 = value1
-        print("Analog Value 1: ", value1)
+        # check read value against average
+        avg0 = np.average(deque0)
+        if abs(avg0 - lastSentValue0) > 5:
+            # Send message with value, wake up screen
+            client.send_message("/analog0", avg0)
+            lastSentValue0 = avg0
+            os.system('xset dpms force on')
+            print("Sent value 0: ", avg0)
+
+
+    # If value not extreme, add to deque
+    if newValue1 * lastSentValue1 > 0 and abs(newValue1 - lastSentValue1) < 250:
+        deque1.appendleft(newValue1)
+        deque1.pop()
+
+        # check read value against average
+        avg1 = np.average(deque1)
+        if abs(avg1 - lastSentValue1) > 5:
+            # Send message with value, wake up screen
+            client.send_message("/analog1", avg1)
+            lastSentValue1 = avg1
+            os.system('xset dpms force on')
+            print("Sent value 1: ", avg1)
+
     
     # Delay sampling time (~30 times second)
     time.sleep(0.032)
