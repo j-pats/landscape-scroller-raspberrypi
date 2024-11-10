@@ -33,8 +33,8 @@ lastSentValue0 = channel0.value
 lastSentValue1 = channel1.value
 
 # Setup channel deques - initialized to store all 
-deque0 = deque(lastSentValue0) * 10
-deque1 = deque(lastSentValue1) * 10
+deque0 = deque([lastSentValue0] * 10)
+deque1 = deque([lastSentValue1] * 10)
 
 print(deque0)
 print(deque1)
@@ -51,13 +51,13 @@ while True:
     newValue1 = channel1.value
 
     # If value not extreme, add to deque
-    if newValue0 * lastSentValue0 > 0 and abs(newValue0 - lastSentValue0) < 250:
+    if abs(newValue0 - lastSentValue0) < 10000:
         deque0.appendleft(newValue0)
         deque0.pop()
 
         # check read value against average
         avg0 = np.average(deque0)
-        if abs(avg0 - lastSentValue0) > 5:
+        if abs(avg0 - lastSentValue0) > 10:
             # Send message with value, wake up screen
             client.send_message("/analog0", avg0)
             lastSentValue0 = avg0
@@ -66,13 +66,13 @@ while True:
 
 
     # If value not extreme, add to deque
-    if newValue1 * lastSentValue1 > 0 and abs(newValue1 - lastSentValue1) < 250:
+    if abs(newValue1 - lastSentValue1) < 10000:
         deque1.appendleft(newValue1)
         deque1.pop()
 
         # check read value against average
         avg1 = np.average(deque1)
-        if abs(avg1 - lastSentValue1) > 5:
+        if abs(avg1 - lastSentValue1) > 10:
             # Send message with value, wake up screen
             client.send_message("/analog1", avg1)
             lastSentValue1 = avg1
